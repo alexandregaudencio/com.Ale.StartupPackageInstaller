@@ -1,0 +1,17 @@
+{
+  "name": "com.alexandregaudencio.bootstrap",
+  "displayName": "Unity bootstrap",
+  "version": "1.0.0",
+  "unity": "6000.0.3",
+  "description": "A compilation of useful unity packages.",
+  "dependencies": {
+    "com.unity.inputsystem": "",
+    "com.unity.textmeshpro": "",
+    "com.cysharp.unitask": "",
+    "com.extenject": ""
+  },
+  "author": {
+    "name": "Alexandre Gaudencio",
+    "email": "alexandre.gtpjr@gmail.com"
+  }
+}
