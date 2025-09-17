@@ -6,7 +6,8 @@
   "type": "tools",
   "description": "A compilation of useful Unity packages.",
   "dependencies": {
-   
+       "com.unity.textmeshpro": "3.0.6",
+    "com.unity.inputsystem": "1.4.4"
 
   },
   "author": {
