@@ -6,14 +6,12 @@
   "type": "tools",
   "description": "A compilation of useful unity packages.",
   "dependencies": {
-    "com.unity.inputsystem": "",
-    "com.unity.textmeshpro": "",
-    "com.cysharp.unitask": "",
-    "com.extenject": "",
-    "com.demigiant.dotween":"",
-    "com.unity.addressables": ""
-  
-
+    "com.unity.inputsystem": "1.4.4",
+    "com.unity.textmeshpro": "3.0.6",
+    "com.cysharp.unitask": "2.3.3",
+    "com.extenject": "9.1.0",
+    "com.demigiant.dotween": "1.2.705",
+    "com.unity.addressables": "1.21.12"
   },
   "author": {
     "name": "Alexandre Gaudencio",
