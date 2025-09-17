@@ -8,11 +8,7 @@
   "dependencies": {
     "com.unity.inputsystem": "1.4.4",
     "com.unity.textmeshpro": "3.0.6",
-    "com.cysharp.unitask": "2.5.10",
-    "com.demigiant.dotween": "1.2.705",
-    "com.unity.addressables": "1.21.12",
-    "com.unity.cinemachine": "2.9.13",
-    "com.extenject": "9.2.0"
+    "com.cysharp.unitask": "2.5.10"
 
   },
   "author": {
