@@ -37,7 +37,9 @@ public class PackageInstallerWindow : EditorWindow
         { "InputSystem Action Prompts", "https://github.com/DrewStriker/InputSystemActionPrompts.git" },
         { "Serializable Interface", "https://github.com/Thundernerd/Unity3D-SerializableInterface.git" },
         { "Libre Fracture", "https://github.com/HunterProduction/unity-libre-fracture-2.0.git" },
-        { "AudioClip Editor", "https://github.com/alexandregaudencio/AudioClipEditor.git" }
+        { "AudioClip Editor", "https://github.com/alexandregaudencio/AudioClipEditor.git" },
+        {"Serialized Dictionary", "https://github.com/ayellowpaper/SerializedDictionary.git"},
+        {"SaintsField Custom Attributes", "https://github.com/TylerTemp/SaintsField.git"}
     };
 
     [MenuItem("Tools/Package Installer")]

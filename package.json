@@ -7,8 +7,7 @@
   "description": "A compilation of useful Unity packages.",
   "dependencies": {
       "com.unity.textmeshpro": "3.0.6",
-      "com.unity.inputsystem": "1.4.4",
-      "com.unity.cinemachine": "2.9.13"
+      "com.unity.inputsystem": "1.4.4"
   },
   "author": {
     "name": "Alexandre Gaudencio",
