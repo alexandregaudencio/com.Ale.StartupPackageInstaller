@@ -1,17 +1,19 @@
 {
   "name": "com.unity-bootstrap",
-  "displayName": "Unity bootstrap",
+  "displayName": "Unity Bootstrap",
   "version": "1.0.0",
   "unity": "2019.4",
   "type": "tools",
-  "description": "A compilation of useful unity packages.",
+  "description": "A compilation of useful Unity packages.",
   "dependencies": {
     "com.unity.inputsystem": "1.4.4",
     "com.unity.textmeshpro": "3.0.6",
-    "com.cysharp.unitask": "2.3.3",
-    "com.extenject": "https://github.com/modesttree/Extenject.git#master",
+    "com.cysharp.unitask": "2.5.10",
     "com.demigiant.dotween": "1.2.705",
-    "com.unity.addressables": "1.21.12"
+    "com.unity.addressables": "1.21.12",
+    "com.unity.cinemachine": "2.9.13",
+    "com.extenject": "9.2.0"
+
   },
   "author": {
     "name": "Alexandre Gaudencio",
