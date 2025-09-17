@@ -8,7 +8,11 @@
     "com.unity.inputsystem": "",
     "com.unity.textmeshpro": "",
     "com.cysharp.unitask": "",
-    "com.extenject": ""
+    "com.extenject": "",
+    "com.demigiant.dotween":"",
+    "com.unity.addressables": ""
+  
+
   },
   "author": {
     "name": "Alexandre Gaudencio",
