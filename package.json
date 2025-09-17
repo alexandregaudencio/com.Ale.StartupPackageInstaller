@@ -1,8 +1,9 @@
 {
-  "name": "com.alexandregaudencio.bootstrap",
+  "name": "com.unity-bootstrap",
   "displayName": "Unity bootstrap",
   "version": "1.0.0",
-  "unity": "6000.0.3",
+  "unity": "2019.4",
+  "type": "tools",
   "description": "A compilation of useful unity packages.",
   "dependencies": {
     "com.unity.inputsystem": "",
