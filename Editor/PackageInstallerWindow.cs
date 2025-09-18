@@ -1,9 +1,9 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
-using System.IO;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 public class PackageInstallerWindow : EditorWindow
 {
@@ -53,10 +53,17 @@ public class PackageInstallerWindow : EditorWindow
         GUILayout.Label("Unity Registry Packages", EditorStyles.boldLabel);
         foreach (var pkg in registryPackages)
         {
-            if (GUILayout.Button($"{pkg.Key}"))
+
+            var split = pkg.Value.Split(':');
+            bool pkgAdded = IsPackageNameInManifest(split[0]);
+            using (new EditorGUILayout.HorizontalScope())
             {
-                var split = pkg.Value.Split(':');
-                AddRegistryPackage(split[0], split[1]);
+                GUILayout.Label(pkg.Key, GUILayout.Width(200));
+                if (pkgAdded) GUI.backgroundColor = Color.green; else GUI.backgroundColor = Color.red;
+                if (GUILayout.Button(pkgAdded ? "Install" : "Remove", GUILayout.Width(150)))
+                {
+                    AddRegistryPackage(split[0], split[1]);
+                }
             }
         }
 
@@ -64,10 +71,20 @@ public class PackageInstallerWindow : EditorWindow
         GUILayout.Label("Git-based Packages", EditorStyles.boldLabel);
         foreach (var pkg in gitPackages)
         {
-            if (GUILayout.Button($"{pkg.Key}"))
+            bool pkgAdded = IsPackageUrlInManifest(pkg.Key, pkg.Value);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(pkg.Key);
+            if (GUILayout.Button(pkgAdded ? "Install" : "Remove"))
             {
                 AddGitPackage(pkg.Key, pkg.Value);
+
             }
+            GUILayout.EndHorizontal();
+        }
+        GUILayout.Space(30);
+        if (GUILayout.Button("Reload Import"))
+        {
+            UnityEditor.PackageManager.Client.Resolve();
         }
     }
 
@@ -79,7 +96,7 @@ public class PackageInstallerWindow : EditorWindow
 
         if (manifestText.Contains($"\"{packageName}\""))
         {
-            Debug.LogWarning($"'{packageName}' já está presente no manifest.json.");
+            Debug.LogWarning($"'{packageName}' already present in manifest.json.");
             return;
         }
 
@@ -91,7 +108,7 @@ public class PackageInstallerWindow : EditorWindow
         File.WriteAllText(manifestPath, manifestText);
 
         AssetDatabase.Refresh();
-        Debug.Log($"Pacote '{packageName}' adicionado ao manifest.json com sucesso.");
+        Debug.Log($"Package '{packageName}' add to manifest.json.");
     }
 
     private static void AddGitPackage(string packageDisplayName, string gitUrl)
@@ -103,7 +120,7 @@ public class PackageInstallerWindow : EditorWindow
 
         if (manifestText.Contains($"\"{packageName}\""))
         {
-            Debug.LogWarning($"'{packageDisplayName}' já está presente no manifest.json.");
+            Debug.LogWarning($"'{packageDisplayName}' already present in manifest.json.");
             return;
         }
 
@@ -115,10 +132,9 @@ public class PackageInstallerWindow : EditorWindow
         File.WriteAllText(manifestPath, manifestText);
 
         AssetDatabase.Refresh();
-        Debug.Log($"Pacote '{packageDisplayName}' adicionado ao manifest.json com sucesso.");
+        Debug.Log($"Package '{packageDisplayName}' add to manifest.json.");
     }
 
-    // Gerador de nome de pacote simples baseado na URL
     private static string GeneratePackageNameFromUrl(string url)
     {
         var match = Regex.Match(url, @"github\.com/([^/]+)/([^/.]+)");
@@ -127,7 +143,33 @@ public class PackageInstallerWindow : EditorWindow
             return $"com.{match.Groups[1].Value.ToLower()}.{match.Groups[2].Value.ToLower()}";
         }
 
-        return $"com.custom.package{Random.Range(1000, 9999)}";
+        return $"com.custom.package{UnityEngine.Random.Range(1000, 9999)}";
+    }
+
+    public static bool IsPackageNameInManifest(string packageName)
+    {
+        if (!File.Exists(manifestPath)) return false;
+
+        string manifestText = File.ReadAllText(manifestPath);
+
+        if (manifestText.Contains($"\"{packageName}\""))
+        {
+            return true;
+        }
+        return false;
+    }
+    public static bool IsPackageUrlInManifest(string packageDisplayName, string gitUrl)
+    {
+        if (!File.Exists(manifestPath)) return false;
+
+        string manifestText = File.ReadAllText(manifestPath);
+        string packageName = GeneratePackageNameFromUrl(gitUrl);
+
+        if (manifestText.Contains($"\"{packageName}\""))
+        {
+            return true;
+        }
+        return false;
     }
 }
 #endif
