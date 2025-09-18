@@ -9,10 +9,8 @@ public class PackageInstallerWindow : EditorWindow
 {
     private static string manifestPath => Path.Combine(Application.dataPath, "../Packages/manifest.json");
 
-    // Pacotes do Unity Registry (nome + versão)
     private static readonly Dictionary<string, string> registryPackages = new Dictionary<string, string>
     {
-        { "TextMeshPro", "com.unity.textmeshpro:3.0.6" },
         { "Input System", "com.unity.inputsystem:1.4.4" },
         { "ProBuilder", "com.unity.probuilder:6.0.4" },
         { "Animation Rigging", "com.unity.animation.rigging:1.3.0" },
@@ -29,15 +27,14 @@ public class PackageInstallerWindow : EditorWindow
         { "Timeline", "com.unity.timeline:1.8.8" }
     };
 
-    // Pacotes Git (nome + URL)
     private static readonly Dictionary<string, string> gitPackages = new Dictionary<string, string>
     {
-        { "UniTask", "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask" },
-        { "Easy Text Effects", "https://github.com/LeiQiaoZhi/Easy-Text-Effect.git" },
-        { "InputSystem Action Prompts", "https://github.com/DrewStriker/InputSystemActionPrompts.git" },
-        { "Serializable Interface", "https://github.com/Thundernerd/Unity3D-SerializableInterface.git" },
-        { "Libre Fracture", "https://github.com/HunterProduction/unity-libre-fracture-2.0.git" },
-        { "AudioClip Editor", "https://github.com/alexandregaudencio/AudioClipEditor.git" },
+        {"UniTask", "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask" },
+        {"Easy Text Effects", "https://github.com/LeiQiaoZhi/Easy-Text-Effect.git" },
+        {"InputSystem Action Prompts", "https://github.com/DrewStriker/InputSystemActionPrompts.git" },
+        {"Serializable Interface", "https://github.com/Thundernerd/Unity3D-SerializableInterface.git" },
+        {"Libre Fracture", "https://github.com/HunterProduction/unity-libre-fracture-2.0.git" },
+        {"AudioClip Editor", "https://github.com/alexandregaudencio/AudioClipEditor.git" },
         {"Serialized Dictionary", "https://github.com/ayellowpaper/SerializedDictionary.git"},
         {"SaintsField Custom Attributes", "https://github.com/TylerTemp/SaintsField.git"}
     };
@@ -55,13 +52,12 @@ private Vector2 scrollPos;
 
 
         scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
-        if (GUILayout.Button("Category 1 "+ (category1 ?"▲":"▼")  ))
-        {
-            category1 = !category1;
-        }
-        if (category1) DrawTools1();
-
-        GUILayout.Space(10);
+        // if (GUILayout.Button("Category 1 "+ (category1 ?"▲":"▼")  ))
+        // {
+        //     category1 = !category1;
+        // }
+        // if (category1) 
+        DrawTools1();
         DrawTools2();
         GUILayout.Space(30);
         GUI.backgroundColor = Color.white;
@@ -85,7 +81,14 @@ private Vector2 scrollPos;
                 if (pkgAdded) GUI.backgroundColor = Color.red; else GUI.backgroundColor = Color.green;
                 if (GUILayout.Button(pkgAdded ? "Remove" : "Install", GUILayout.Width(150)))
                 {
-                    AddRegistryPackage(split[0], split[1]);
+                    if (pkgAdded)
+                    {
+                        RemoveRegistryPackage(split[0], split[1]);
+                    }
+                    else
+                    {
+                        AddRegistryPackage(split[0], split[1]);
+                    }
                 }
             }
         }
@@ -132,6 +135,27 @@ private Vector2 scrollPos;
 
         AssetDatabase.Refresh();
         Debug.Log($"Package '{packageName}' add to manifest.json.");
+    }
+
+   private static void RemoveRegistryPackage(string packageName, string version)
+    {{
+    if (!File.Exists(manifestPath)) return;
+    string manifestText = File.ReadAllText(manifestPath);
+    if (!manifestText.Contains($"\"{packageName}\""))
+    {
+        Debug.LogWarning($"'{packageName}' is not present in manifest.json.");
+        return;
+    }
+
+    string pattern = $"\\s*\"{packageName}\"\\s*:\\s*\"[^\"]+\"\\s*,?";
+    manifestText = Regex.Replace(manifestText, pattern, "");
+
+    manifestText = manifestText.Replace(",\n}", "\n}");
+    File.WriteAllText(manifestPath, manifestText);
+    AssetDatabase.Refresh();
+    Debug.Log($"Package '{packageName}' removed from manifest.json.");
+}
+
     }
 
     private static void AddGitPackage(string packageDisplayName, string gitUrl)
