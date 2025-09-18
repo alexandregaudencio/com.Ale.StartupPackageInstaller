@@ -87,7 +87,7 @@ public class PackageInstallerWindow : EditorWindow
         GUILayout.Space(30);
         GUI.backgroundColor = (Color)default;
 
-        if (GUILayout.Button("Reload Import"), GUILayout.Height(60))
+        if (GUILayout.Button("Reload Import", GUILayout.Height(60)))
         {
             UnityEditor.PackageManager.Client.Resolve();
         }
