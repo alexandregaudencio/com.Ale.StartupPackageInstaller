@@ -53,49 +53,81 @@ public class PackageInstallerWindow : EditorWindow
         GUILayout.Label("Unity Registry Packages", EditorStyles.boldLabel);
         foreach (var pkg in registryPackages)
         {
-            bool isInstalled = IsPackageInstalled(pkg.Value.Split(':')[0]);
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button(pkg.Key))
+            if (GUILayout.Button($"Install {pkg.Key}"))
             {
                 var split = pkg.Value.Split(':');
                 AddRegistryPackage(split[0], split[1]);
             }
-            GUILayout.Label(isInstalled ? "Installed" : "Not Installed", GUILayout.Width(100));
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
         }
 
         GUILayout.Space(10);
         GUILayout.Label("Git-based Packages", EditorStyles.boldLabel);
         foreach (var pkg in gitPackages)
         {
-            string packageName = GeneratePackageNameFromUrl(pkg.Value);
-            bool isInstalled = IsPackageInstalled(packageName);
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button(pkg.Key))
+            if (GUILayout.Button($"Install {pkg.Key}"))
             {
                 AddGitPackage(pkg.Key, pkg.Value);
             }
-            GUILayout.Label(isInstalled ? "Installed" : "Not Installed", GUILayout.Width(100));
-            if (GUILayout.Button("about", GUILayout.Width(50)))
-            {
-                Application.OpenURL(pkg.Value);
-            }
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
         }
-    }
-
-    private static bool IsPackageInstalled(string packageName)
-    {
-        if (!File.Exists(manifestPath)) return false;
-
-        string manifestText = File.ReadAllText(manifestPath);
-        return manifestText.Contains($"\"{packageName}\"");
     }
 
     private static void AddRegistryPackage(string packageName, string version)
     {
         if (!File.Exists(manifestPath)) return;
 
-        string manifestText
+        string manifestText = File.ReadAllText(manifestPath);
+
+        if (manifestText.Contains($"\"{packageName}\""))
+        {
+            Debug.LogWarning($"'{packageName}' já está presente no manifest.json.");
+            return;
+        }
+
+        string newLine = $",\n    \"{packageName}\": \"{version}\"";
+
+        int depIndex = manifestText.IndexOf("\"dependencies\"");
+        int insertIndex = manifestText.IndexOf('}', depIndex);
+        manifestText = manifestText.Insert(insertIndex, newLine);
+        File.WriteAllText(manifestPath, manifestText);
+
+        AssetDatabase.Refresh();
+        Debug.Log($"Pacote '{packageName}' adicionado ao manifest.json com sucesso.");
+    }
+
+    private static void AddGitPackage(string packageDisplayName, string gitUrl)
+    {
+        if (!File.Exists(manifestPath)) return;
+
+        string manifestText = File.ReadAllText(manifestPath);
+        string packageName = GeneratePackageNameFromUrl(gitUrl);
+
+        if (manifestText.Contains($"\"{packageName}\""))
+        {
+            Debug.LogWarning($"'{packageDisplayName}' já está presente no manifest.json.");
+            return;
+        }
+
+        string newLine = $",\n    \"{packageName}\": \"{gitUrl}\"";
+
+        int depIndex = manifestText.IndexOf("\"dependencies\"");
+        int insertIndex = manifestText.IndexOf('}', depIndex);
+        manifestText = manifestText.Insert(insertIndex, newLine);
+        File.WriteAllText(manifestPath, manifestText);
+
+        AssetDatabase.Refresh();
+        Debug.Log($"Pacote '{packageDisplayName}' adicionado ao manifest.json com sucesso.");
+    }
+
+    // Gerador de nome de pacote simples baseado na URL
+    private static string GeneratePackageNameFromUrl(string url)
+    {
+        var match = Regex.Match(url, @"github\.com/([^/]+)/([^/.]+)");
+        if (match.Success)
+        {
+            return $"com.{match.Groups[1].Value.ToLower()}.{match.Groups[2].Value.ToLower()}";
+        }
+
+        return $"com.custom.package{Random.Range(1000, 9999)}";
+    }
+}
+#endif
