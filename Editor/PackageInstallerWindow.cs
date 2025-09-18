@@ -41,33 +41,58 @@ public class PackageInstallerWindow : EditorWindow
         {"Serialized Dictionary", "https://github.com/ayellowpaper/SerializedDictionary.git"},
         {"SaintsField Custom Attributes", "https://github.com/TylerTemp/SaintsField.git"}
     };
-
+    private bool category1 = false;
     [MenuItem("Tools/Package Installer")]
     public static void ShowWindow()
     {
         GetWindow<PackageInstallerWindow>("Package Installer");
     }
 
+private Vector2 scrollPos;
     private void OnGUI()
     {
         GUILayout.Label("Unity Registry Packages", EditorStyles.boldLabel);
-        foreach (var pkg in registryPackages)
+
+
+        scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
+        if (GUILayout.Button("Category 1 "+ (category1 ?"▲":"▼")  ))
         {
-            
+            category1 = !category1;
+        }
+        if (category1) DrawTools1();
+
+        GUILayout.Space(10);
+        DrawTools2();
+        GUILayout.Space(30);
+        GUI.backgroundColor = Color.white;
+
+        if (GUILayout.Button("Reload packages", GUILayout.Height(40)))
+        {
+            UnityEditor.PackageManager.Client.Resolve();
+        }
+        EditorGUILayout.EndScrollView();
+    }
+
+    private static void DrawTools1()
+    {
+         foreach (var pkg in registryPackages)
+        {
             var split = pkg.Value.Split(':');
             bool pkgAdded = IsPackageNameInManifest(split[0]);
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Label(pkg.Key, GUILayout.Width(200));
-                if (pkgAdded) GUI.backgroundColor = Color.green; else GUI.backgroundColor = Color.red;
-                if (GUILayout.Button(pkgAdded ? "Install" : "Remove", GUILayout.Width(150)))
+                if (pkgAdded) GUI.backgroundColor = Color.red; else GUI.backgroundColor = Color.green;
+                if (GUILayout.Button(pkgAdded ? "Remove" : "Install", GUILayout.Width(150)))
                 {
                     AddRegistryPackage(split[0], split[1]);
                 }
             }
         }
+    }
 
-        GUILayout.Space(10);
+    private static void DrawTools2()
+    {
         GUILayout.Label("Git-based Packages", EditorStyles.boldLabel);
         foreach (var pkg in gitPackages)
         {
@@ -75,21 +100,14 @@ public class PackageInstallerWindow : EditorWindow
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Label(pkg.Key, GUILayout.Width(200));
-                if (pkgAdded) GUI.backgroundColor = Color.green; else GUI.backgroundColor = Color.red;
+                if (pkgAdded) GUI.backgroundColor = Color.red; else GUI.backgroundColor = Color.green;
 
-                if (GUILayout.Button(pkgAdded ? "Install" : "Remove", GUILayout.Width(150)))
+                if (GUILayout.Button(pkgAdded ? "Remove" : "Install", GUILayout.Width(150)))
                 {
                     AddGitPackage(pkg.Key, pkg.Value);
 
                 }
             }
-        }
-        GUILayout.Space(30);
-        GUI.backgroundColor = (Color)default;
-
-        if (GUILayout.Button("Reload Import", GUILayout.Height(60)))
-        {
-            UnityEditor.PackageManager.Client.Resolve();
         }
     }
 
