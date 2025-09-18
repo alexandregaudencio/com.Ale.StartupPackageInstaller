@@ -53,7 +53,7 @@ public class PackageInstallerWindow : EditorWindow
         GUILayout.Label("Unity Registry Packages", EditorStyles.boldLabel);
         foreach (var pkg in registryPackages)
         {
-
+            
             var split = pkg.Value.Split(':');
             bool pkgAdded = IsPackageNameInManifest(split[0]);
             using (new EditorGUILayout.HorizontalScope())
@@ -72,16 +72,21 @@ public class PackageInstallerWindow : EditorWindow
         foreach (var pkg in gitPackages)
         {
             bool pkgAdded = IsPackageUrlInManifest(pkg.Key, pkg.Value);
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(pkg.Key);
-            if (GUILayout.Button(pkgAdded ? "Install" : "Remove"))
+            using (new EditorGUILayout.HorizontalScope())
             {
-                AddGitPackage(pkg.Key, pkg.Value);
+                GUILayout.Label(pkg.Key, GUILayout.Width(200));
+                if (pkgAdded) GUI.backgroundColor = Color.green; else GUI.backgroundColor = Color.red;
 
+                if (GUILayout.Button(pkgAdded ? "Install" : "Remove", GUILayout.Width(150)))
+                {
+                    AddGitPackage(pkg.Key, pkg.Value);
+
+                }
             }
-            GUILayout.EndHorizontal();
         }
         GUILayout.Space(30);
+        GUI.backgroundColor = (Color)default;
+
         if (GUILayout.Button("Reload Import"))
         {
             UnityEditor.PackageManager.Client.Resolve();
