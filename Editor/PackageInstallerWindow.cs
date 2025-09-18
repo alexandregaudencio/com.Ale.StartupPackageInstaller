@@ -105,6 +105,8 @@ private Vector2 scrollPos;
                     {
                         AddRegistryPackage(split[0], split[1]);
                     }
+                    UnityEditor.PackageManager.Client.Resolve();
+
                 }
             }
         }
@@ -130,6 +132,8 @@ private Vector2 scrollPos;
                     {
                         AddGitPackage(pkg.Key, pkg.Value);
                     }
+                    UnityEditor.PackageManager.Client.Resolve();
+
                 }
             }
         }
