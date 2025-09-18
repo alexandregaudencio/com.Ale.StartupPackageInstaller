@@ -53,10 +53,21 @@ public class PackageInstallerWindow : EditorWindow
         GUILayout.Label("Unity Registry Packages", EditorStyles.boldLabel);
         foreach (var pkg in registryPackages)
         {
-            if (GUILayout.Button($"Install {pkg.Key}"))
+            string packageName = pkg.Value.Split(':')[0];
+            bool isAdded = IsPackageAdded(packageName);
+            string buttonText = $"{pkg.Key} {(isAdded ? "(Adicionado)" : "(Não Adicionado)")}";
+
+            if (GUILayout.Button(buttonText))
             {
-                var split = pkg.Value.Split(':');
-                AddRegistryPackage(split[0], split[1]);
+                if (!isAdded)
+                {
+                    var split = pkg.Value.Split(':');
+                    AddRegistryPackage(split[0], split[1]);
+                }
+                else
+                {
+                    Debug.LogWarning($"'{pkg.Key}' já está presente no projeto.");
+                }
             }
         }
 
@@ -64,14 +75,25 @@ public class PackageInstallerWindow : EditorWindow
         GUILayout.Label("Git-based Packages", EditorStyles.boldLabel);
         foreach (var pkg in gitPackages)
         {
-            if (GUILayout.Button($"Install {pkg.Key}"))
+            string packageName = GeneratePackageNameFromUrl(pkg.Value);
+            bool isAdded = IsPackageAdded(packageName);
+            string buttonText = $"{pkg.Key} {(isAdded ? "(Adicionado)" : "(Não Adicionado)")}";
+
+            if (GUILayout.Button(buttonText))
             {
-                AddGitPackage(pkg.Key, pkg.Value);
+                if (!isAdded)
+                {
+                    AddGitPackage(pkg.Key, pkg.Value);
+                }
+                else
+                {
+                    Debug.LogWarning($"'{pkg.Key}' já está presente no projeto.");
+                }
             }
         }
     }
 
-    private static void AddRegistryPackage(string packageName, string version)
+    private static bool IsPackageAdded(string packageName)
     {
         if (!File.Exists(manifestPath)) return;
 
