@@ -36,19 +36,26 @@ public class PackageInstallerWindow : EditorWindow
         {"Libre Fracture", "https://github.com/HunterProduction/unity-libre-fracture-2.0.git" },
         {"AudioClip Editor", "https://github.com/alexandregaudencio/AudioClipEditor.git" },
         {"Serialized Dictionary", "https://github.com/ayellowpaper/SerializedDictionary.git"},
-        {"SaintsField Custom Attributes", "https://github.com/TylerTemp/SaintsField.git"}
+        {"SaintsField Custom Attributes", "https://github.com/TylerTemp/SaintsField.git"},
+        {"Transition Kit", "https://github.com/prime31/TransitionKit.git"}
     };
-    private bool category1 = false;
-    [MenuItem("Tools/Package Installer")]
+
+    private static readonly  Dictionary<string, string> links = new Dictionary<string, string>()
+        {
+            { "Kinematic Character Controller", "https://assetstore.unity.com/packages/tools/physics/kinematic-character-controller-99131" }      
+        };
+
+    // private bool category1 = false;
+    [MenuItem("Tools/Startup Package Installer")]
     public static void ShowWindow()
     {
-        GetWindow<PackageInstallerWindow>("Package Installer");
+        GetWindow<PackageInstallerWindow>("Startup Package Installer");
     }
 
 private Vector2 scrollPos;
     private void OnGUI()
     {
-        GUILayout.Label("Unity Registry Packages", EditorStyles.boldLabel);
+        GUILayout.Label("Packages", EditorStyles.boldLabel);
 
 
         scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
@@ -66,7 +73,16 @@ private Vector2 scrollPos;
         {
             UnityEditor.PackageManager.Client.Resolve();
         }
+
+
+        GUILayout.Space(20);
+        CreateLinks();
+
+
         EditorGUILayout.EndScrollView();
+        
+
+        
     }
 
     private static void DrawTools1()
@@ -96,7 +112,6 @@ private Vector2 scrollPos;
 
     private static void DrawTools2()
     {
-        GUILayout.Label("Git-based Packages", EditorStyles.boldLabel);
         foreach (var pkg in gitPackages)
         {
             bool pkgAdded = IsPackageUrlInManifest(pkg.Key, pkg.Value);
@@ -107,13 +122,43 @@ private Vector2 scrollPos;
 
                 if (GUILayout.Button(pkgAdded ? "Remove" : "Install", GUILayout.Width(150)))
                 {
-                    AddGitPackage(pkg.Key, pkg.Value);
-
+                    if (pkgAdded)
+                    {
+                        RemoveGitPackage(pkg.Key, pkg.Value);
+                    }
+                    else
+                    {
+                        AddGitPackage(pkg.Key, pkg.Value);
+                    }
                 }
             }
         }
     }
 
+    private static void CreateLinks()
+    {
+        GUILayout.Label("Asset Store ", EditorStyles.boldLabel);
+        GUIStyle linkStyle = new GUIStyle(EditorStyles.label);
+        linkStyle.normal.textColor = new Color(0, 0.5f, 1f);
+        linkStyle.hover.textColor = Color.cyan;
+        linkStyle.stretchWidth = true;
+
+        foreach (var kvp in links)
+        {
+            GUILayout.Space(5); 
+            string title = kvp.Key;
+            string url = kvp.Value;
+
+            Rect linkRect = GUILayoutUtility.GetRect(new GUIContent(title), linkStyle);
+            EditorGUI.LabelField(linkRect, title, linkStyle);
+
+            if (Event.current.type == EventType.MouseDown && linkRect.Contains(Event.current.mousePosition))
+            {
+                Application.OpenURL(url);
+            }
+
+        }
+    }
     private static void AddRegistryPackage(string packageName, string version)
     {
         if (!File.Exists(manifestPath)) return;
@@ -181,7 +226,28 @@ private Vector2 scrollPos;
         AssetDatabase.Refresh();
         Debug.Log($"Package '{packageDisplayName}' add to manifest.json.");
     }
+    private static void RemoveGitPackage(string packageDisplayName, string gitUrl)
+    {
+        if (!File.Exists(manifestPath)) return;
 
+        string manifestText = File.ReadAllText(manifestPath);
+        string packageName = GeneratePackageNameFromUrl(gitUrl);
+
+        // Regex para remover a linha do pacote
+        // Funciona para pacotes do tipo: "package.name": "url",
+        string pattern = $@"\s*\""{Regex.Escape(packageName)}\""\s*:\s*\""{Regex.Escape(gitUrl)}\""\s*,?\s*";
+        string newManifest = Regex.Replace(manifestText, pattern, "");
+
+        if (manifestText == newManifest)
+        {
+            Debug.LogWarning($"Package '{packageDisplayName}' not found in manifest.json.");
+            return;
+        }
+
+        File.WriteAllText(manifestPath, newManifest);
+        AssetDatabase.Refresh();
+        Debug.Log($"Package '{packageDisplayName}' removed from manifest.json.");
+    }
     private static string GeneratePackageNameFromUrl(string url)
     {
         var match = Regex.Match(url, @"github\.com/([^/]+)/([^/.]+)");
