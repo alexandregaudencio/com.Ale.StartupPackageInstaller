@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using Unity.Plastic.Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,7 +18,6 @@ public class PackageInstallerWindow : EditorWindow
         { "Animation Rigging", "com.unity.animation.rigging:1.3.0" },
         { "Cinemachine", "com.unity.cinemachine:3.1.4" },
         { "Addressables", "com.unity.addressables:1.21.12" },
-        { "DoTween", "com.demigiant.dotween:1.2.705" },
         { "Extenject", "com.extenject:9.2.0" },
         { "Post Processing", "com.unity.postprocessing:3.4.0" },
         { "URP", "com.unity.render-pipelines.universal:14.0.8" },
@@ -37,12 +38,13 @@ public class PackageInstallerWindow : EditorWindow
         {"AudioClip Editor", "https://github.com/alexandregaudencio/AudioClipEditor.git" },
         {"Serialized Dictionary", "https://github.com/ayellowpaper/SerializedDictionary.git"},
         {"SaintsField Custom Attributes", "https://github.com/TylerTemp/SaintsField.git"},
-        {"Transition Kit", "https://github.com/prime31/TransitionKit.git"}
+        {"Transition Kit", "https://github.com/prime31/TransitionKit.git"},
+        {"Dotween", "https://github.com/Demigiant/dotween.git" }
     };
 
-    private static readonly  Dictionary<string, string> links = new Dictionary<string, string>()
+    private static readonly Dictionary<string, string> links = new Dictionary<string, string>()
         {
-            { "Kinematic Character Controller", "https://assetstore.unity.com/packages/tools/physics/kinematic-character-controller-99131" }      
+            { "Kinematic Character Controller", "https://assetstore.unity.com/packages/tools/physics/kinematic-character-controller-99131" }
         };
 
     // private bool category1 = false;
@@ -52,9 +54,11 @@ public class PackageInstallerWindow : EditorWindow
         GetWindow<PackageInstallerWindow>("Startup Package Installer");
     }
 
-private Vector2 scrollPos;
+    private Vector2 scrollPos;
     private void OnGUI()
     {
+
+
         GUILayout.Label("Packages", EditorStyles.boldLabel);
 
 
@@ -72,6 +76,7 @@ private Vector2 scrollPos;
         if (GUILayout.Button("Reload packages", GUILayout.Height(40)))
         {
             UnityEditor.PackageManager.Client.Resolve();
+            AssetDatabase.Refresh();
         }
 
 
@@ -80,14 +85,23 @@ private Vector2 scrollPos;
 
 
         EditorGUILayout.EndScrollView();
-        
 
-        
+        // empurra tudo pra cima, deixando link no rodapé
+        using (new GUILayout.HorizontalScope())
+        {
+            GUILayout.FlexibleSpace();
+            if (EditorGUILayout.LinkButton("Abrir manifest.json"))
+            {
+                var path = System.IO.Path.Combine(Application.dataPath, "../Packages/manifest.json");
+                Application.OpenURL(path);
+            }
+        }
+
     }
 
     private static void DrawTools1()
     {
-         foreach (var pkg in registryPackages)
+        foreach (var pkg in registryPackages)
         {
             var split = pkg.Value.Split(':');
             bool pkgAdded = IsPackageNameInManifest(split[0]);
@@ -105,7 +119,7 @@ private Vector2 scrollPos;
                     {
                         AddRegistryPackage(split[0], split[1]);
                     }
-                    UnityEditor.PackageManager.Client.Resolve();
+                    //UnityEditor.PackageManager.Client.Resolve();
 
                 }
             }
@@ -132,7 +146,7 @@ private Vector2 scrollPos;
                     {
                         AddGitPackage(pkg.Key, pkg.Value);
                     }
-                    UnityEditor.PackageManager.Client.Resolve();
+                    //UnityEditor.PackageManager.Client.Resolve();
 
                 }
             }
@@ -149,7 +163,7 @@ private Vector2 scrollPos;
 
         foreach (var kvp in links)
         {
-            GUILayout.Space(5); 
+            GUILayout.Space(5);
             string title = kvp.Key;
             string url = kvp.Value;
 
@@ -166,69 +180,43 @@ private Vector2 scrollPos;
     private static void AddRegistryPackage(string packageName, string version)
     {
         if (!File.Exists(manifestPath)) return;
-
         string manifestText = File.ReadAllText(manifestPath);
-
         if (manifestText.Contains($"\"{packageName}\""))
         {
             Debug.LogWarning($"'{packageName}' already present in manifest.json.");
             return;
         }
-
-        string newLine = $",\n    \"{packageName}\": \"{version}\"";
-
-        int depIndex = manifestText.IndexOf("\"dependencies\"");
-        int insertIndex = manifestText.IndexOf('}', depIndex);
-        manifestText = manifestText.Insert(insertIndex, newLine);
-        File.WriteAllText(manifestPath, manifestText);
-
-        AssetDatabase.Refresh();
+        var root = JObject.Parse(manifestText);
+        root["dependencies"][packageName] = version;
+        File.WriteAllText(manifestPath, root.ToString(Formatting.Indented));
         Debug.Log($"Package '{packageName}' add to manifest.json.");
     }
-
-   private static void RemoveRegistryPackage(string packageName, string version)
-    {{
-    if (!File.Exists(manifestPath)) return;
-    string manifestText = File.ReadAllText(manifestPath);
-    if (!manifestText.Contains($"\"{packageName}\""))
+    private static void RemoveRegistryPackage(string packageName, string version)
     {
-        Debug.LogWarning($"'{packageName}' is not present in manifest.json.");
-        return;
-    }
-
-    string pattern = $"\\s*\"{packageName}\"\\s*:\\s*\"[^\"]+\"\\s*,?";
-    manifestText = Regex.Replace(manifestText, pattern, "");
-
-    manifestText = manifestText.Replace(",\n}", "\n}");
-    File.WriteAllText(manifestPath, manifestText);
-    AssetDatabase.Refresh();
-    Debug.Log($"Package '{packageName}' removed from manifest.json.");
-}
+        {
+            if (!File.Exists(manifestPath)) return;
+            string manifestText = File.ReadAllText(manifestPath);
+            if (!manifestText.Contains($"\"{packageName}\""))
+            {
+                Debug.LogWarning($"'{packageName}' is not present in manifest.json.");
+                return;
+            }
+            var root = JObject.Parse(manifestText);
+            var deps = (JObject)root["dependencies"];
+            deps.Remove(packageName);
+            File.WriteAllText(manifestPath, root.ToString(Formatting.Indented));
+            Debug.Log($"Package '{packageName}' removed from manifest.json.");
+        }
 
     }
 
     private static void AddGitPackage(string packageDisplayName, string gitUrl)
     {
         if (!File.Exists(manifestPath)) return;
-
         string manifestText = File.ReadAllText(manifestPath);
         string packageName = GeneratePackageNameFromUrl(gitUrl);
+        AddRegistryPackage(packageName, gitUrl);
 
-        if (manifestText.Contains($"\"{packageName}\""))
-        {
-            Debug.LogWarning($"'{packageDisplayName}' already present in manifest.json.");
-            return;
-        }
-
-        string newLine = $",\n    \"{packageName}\": \"{gitUrl}\"";
-
-        int depIndex = manifestText.IndexOf("\"dependencies\"");
-        int insertIndex = manifestText.IndexOf('}', depIndex);
-        manifestText = manifestText.Insert(insertIndex, newLine);
-        File.WriteAllText(manifestPath, manifestText);
-
-        AssetDatabase.Refresh();
-        Debug.Log($"Package '{packageDisplayName}' add to manifest.json.");
     }
     private static void RemoveGitPackage(string packageDisplayName, string gitUrl)
     {
@@ -236,21 +224,8 @@ private Vector2 scrollPos;
 
         string manifestText = File.ReadAllText(manifestPath);
         string packageName = GeneratePackageNameFromUrl(gitUrl);
+        RemoveRegistryPackage(packageName, gitUrl);
 
-        // Regex para remover a linha do pacote
-        // Funciona para pacotes do tipo: "package.name": "url",
-        string pattern = $@"\s*\""{Regex.Escape(packageName)}\""\s*:\s*\""{Regex.Escape(gitUrl)}\""\s*,?\s*";
-        string newManifest = Regex.Replace(manifestText, pattern, "");
-
-        if (manifestText == newManifest)
-        {
-            Debug.LogWarning($"Package '{packageDisplayName}' not found in manifest.json.");
-            return;
-        }
-
-        File.WriteAllText(manifestPath, newManifest);
-        AssetDatabase.Refresh();
-        Debug.Log($"Package '{packageDisplayName}' removed from manifest.json.");
     }
     private static string GeneratePackageNameFromUrl(string url)
     {
@@ -259,8 +234,8 @@ private Vector2 scrollPos;
         {
             return $"com.{match.Groups[1].Value.ToLower()}.{match.Groups[2].Value.ToLower()}";
         }
+        throw new System.Exception($"package is not registred in url {url}.");
 
-        return $"com.custom.package{UnityEngine.Random.Range(1000, 9999)}";
     }
 
     public static bool IsPackageNameInManifest(string packageName)
