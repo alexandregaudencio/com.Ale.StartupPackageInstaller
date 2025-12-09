@@ -20,7 +20,6 @@ public class PackageInstallerWindow : EditorWindow
         { "Animation Rigging", "com.unity.animation.rigging:1.3.0" },
         { "Cinemachine", "com.unity.cinemachine:3.1.4" },
         { "Addressables", "com.unity.addressables:1.21.12" },
-        //{ "Extenject", "com.extenject:9.2.0" },
         { "Post Processing", "com.unity.postprocessing:3.4.0" },
         { "URP", "com.unity.render-pipelines.universal:14.0.8" },
         { "Behavior", "com.unity.behavior:1.0.13" },
@@ -33,14 +32,6 @@ public class PackageInstallerWindow : EditorWindow
     {
         {"UniTask", "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask" },
         {"AudioClip Editor", "https://github.com/alexandregaudencio/AudioClipEditor.git" }
-        //{"Easy Text Effects", "https://github.com/LeiQiaoZhi/Easy-Text-Effect.git" },
-        //{"InputSystem Action Prompts", "https://github.com/DrewStriker/InputSystemActionPrompts.git" },
-        //{"Serializable Interface", "https://github.com/Thundernerd/Unity3D-SerializableInterface.git" },
-        //{"Libre Fracture", "https://github.com/HunterProduction/unity-libre-fracture-2.0.git" },
-        //{"Serialized Dictionary", "https://github.com/ayellowpaper/SerializedDictionary.git"},
-        //{"SaintsField Custom Attributes", "https://github.com/TylerTemp/SaintsField.git"},
-        //{"Scene Reference", "git+https://github.com/starikcetin/Eflatun.SceneReference.git#4.1.1" },
-        //{"Transition Kit", "https://github.com/prime31/TransitionKit.git"},
 
     };
 
@@ -53,8 +44,8 @@ public class PackageInstallerWindow : EditorWindow
         {"inputsystemactionprompts", " \"com.simonoliver.inputsystemactionprompts\": \"https://github.com/DrewStriker/InputSystemActionPrompts.git\"" },
         {"libre-fracture","\"com.hunter-production.new-libre-fracture\": \"https://github.com/HunterProduction/unity-libre-fracture-2.0.git\"" },
         {"SerializableInterface", "\"net.tnrd.serializableinterface\": \"https://github.com/Thundernerd/Unity3D-SerializableInterface.git\"" },
-        {"serialized-dictionary", "\"ayellowpaper.serialized-dictionary\": \"https://github.com/ayellowpaper/SerializedDictionary.git\"\r\n" },
-        {"SaintsField","\"today.comes.saintsfield\": \"https://github.com/TylerTemp/SaintsField.git\"\r\n" },
+        {"serialized-dictionary", "\"ayellowpaper.serialized-dictionary\": \"https://github.com/ayellowpaper/SerializedDictionary.git\"" },
+        {"saintsfield","\"today.comes.saintsfield\": \"https://github.com/TylerTemp/SaintsField.git\"" },
 
     };
 
@@ -190,7 +181,7 @@ public class PackageInstallerWindow : EditorWindow
                 {
                     if (pkgAdded)
                     {
-                        RemovePackageLine(pkg.Value);
+                        RemovePackageLine(pkg.Key);
                     }
                     else
                     {
@@ -308,7 +299,6 @@ public class PackageInstallerWindow : EditorWindow
         string manifestText = File.ReadAllText(manifestPath);
         string packageName = GeneratePackageNameFromUrl(gitUrl);
 
-
         if (manifestText.Contains($"\"{packageName}\""))
         {
             return true;
@@ -319,28 +309,16 @@ public class PackageInstallerWindow : EditorWindow
     public static void AddPackageLine(string newLine)
     {
         var text = File.ReadAllText(manifestPath);
-
-        // Localiza o bloco "dependencies": {
         var depIndex = text.IndexOf("\"dependencies\"");
         if (depIndex < 0) return;
-
-        // Localiza abertura do bloco
         depIndex = text.IndexOf('{', depIndex);
         if (depIndex < 0) return;
-
-        // Encontrar a linha após a chave '{'
+        
         var insertPos = depIndex + 1;
-
-        // Quebra o conteúdo
         var before = text.Substring(0, insertPos);
-
-        // Se já existe algo, colocar vírgula no final do último item
         var after = text.Substring(insertPos);
         after = after.TrimStart();
-
-        string line = "\n    " + newLine + " ,\n";
-
-        // Recompõe
+        string line = "\n   " + newLine + " ,";
         var result = before + line + text.Substring(insertPos);
 
         File.WriteAllText(manifestPath, result);
@@ -351,48 +329,31 @@ public class PackageInstallerWindow : EditorWindow
     public static void RemovePackageLine(string term)
     {
         var text = File.ReadAllText(manifestPath);
-
-        // Localiza o bloco "dependencies"
         var depIndex = text.IndexOf("\"dependencies\"");
         if (depIndex < 0) return;
-
-        // Abre o bloco {
         depIndex = text.IndexOf('{', depIndex);
         if (depIndex < 0) return;
-
-        // Fecha o bloco }
         var endIndex = text.IndexOf('}', depIndex);
         if (endIndex < 0) return;
 
-        // Extrai somente o conteúdo do bloco
         var before = text.Substring(0, depIndex + 1);
         var block = text.Substring(depIndex + 1, endIndex - depIndex - 1);
         var after = text.Substring(endIndex);
-
-        // Divide por linhas
         var lines = block.Split('\n').ToList();
 
-        // Remove linhas que contenham o termo
         for (int i = lines.Count - 1; i >= 0; i--)
         {
             if (lines[i].Contains(term))
                 lines.RemoveAt(i);
         }
-
-        // Ajusta vírgulas finais
         for (int i = 0; i < lines.Count; i++)
         {
             var l = lines[i].Trim();
-
-            // Remove vírgula extra se for última linha
             if (i == lines.Count - 1)
                 lines[i] = l.TrimEnd(',');
         }
 
-        // Rebuild
         var newBlock = string.Join("\n", lines);
-
-        // Recompõe o texto final
         var final = before + newBlock + after;
 
         File.WriteAllText(manifestPath, final);
