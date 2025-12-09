@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Unity.Plastic.Newtonsoft.Json;
 using Unity.Plastic.Newtonsoft.Json.Linq;
@@ -9,6 +10,7 @@ using UnityEngine;
 
 public class PackageInstallerWindow : EditorWindow
 {
+
     private static string manifestPath => Path.Combine(Application.dataPath, "../Packages/manifest.json");
 
     private static readonly Dictionary<string, string> registryPackages = new Dictionary<string, string>
@@ -18,11 +20,10 @@ public class PackageInstallerWindow : EditorWindow
         { "Animation Rigging", "com.unity.animation.rigging:1.3.0" },
         { "Cinemachine", "com.unity.cinemachine:3.1.4" },
         { "Addressables", "com.unity.addressables:1.21.12" },
-        { "Extenject", "com.extenject:9.2.0" },
+        //{ "Extenject", "com.extenject:9.2.0" },
         { "Post Processing", "com.unity.postprocessing:3.4.0" },
         { "URP", "com.unity.render-pipelines.universal:14.0.8" },
-        { "Behaviour", "com.unity.behaviour:1.1.0" },
-        { "SceneReference", "com.eflatun.scenereference:4.1.1" },
+        { "Behavior", "com.unity.behavior:1.0.13" },
         { "Splines", "com.unity.splines:2.6.1" },
         { "Terrain Tools", "com.unity.terrain-tools:5.1.2" },
         { "Timeline", "com.unity.timeline:1.8.8" }
@@ -31,21 +32,43 @@ public class PackageInstallerWindow : EditorWindow
     private static readonly Dictionary<string, string> gitPackages = new Dictionary<string, string>
     {
         {"UniTask", "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask" },
-        {"Easy Text Effects", "https://github.com/LeiQiaoZhi/Easy-Text-Effect.git" },
-        {"InputSystem Action Prompts", "https://github.com/DrewStriker/InputSystemActionPrompts.git" },
-        {"Serializable Interface", "https://github.com/Thundernerd/Unity3D-SerializableInterface.git" },
-        {"Libre Fracture", "https://github.com/HunterProduction/unity-libre-fracture-2.0.git" },
-        {"AudioClip Editor", "https://github.com/alexandregaudencio/AudioClipEditor.git" },
-        {"Serialized Dictionary", "https://github.com/ayellowpaper/SerializedDictionary.git"},
-        {"SaintsField Custom Attributes", "https://github.com/TylerTemp/SaintsField.git"},
-        {"Transition Kit", "https://github.com/prime31/TransitionKit.git"},
-        {"Dotween", "https://github.com/Demigiant/dotween.git" }
+        {"AudioClip Editor", "https://github.com/alexandregaudencio/AudioClipEditor.git" }
+        //{"Easy Text Effects", "https://github.com/LeiQiaoZhi/Easy-Text-Effect.git" },
+        //{"InputSystem Action Prompts", "https://github.com/DrewStriker/InputSystemActionPrompts.git" },
+        //{"Serializable Interface", "https://github.com/Thundernerd/Unity3D-SerializableInterface.git" },
+        //{"Libre Fracture", "https://github.com/HunterProduction/unity-libre-fracture-2.0.git" },
+        //{"Serialized Dictionary", "https://github.com/ayellowpaper/SerializedDictionary.git"},
+        //{"SaintsField Custom Attributes", "https://github.com/TylerTemp/SaintsField.git"},
+        //{"Scene Reference", "git+https://github.com/starikcetin/Eflatun.SceneReference.git#4.1.1" },
+        //{"Transition Kit", "https://github.com/prime31/TransitionKit.git"},
+
     };
 
+
+    //The Key name must be part of the package line 
+    private static readonly Dictionary<string, string> packagesLines = new()
+    {
+        {"SceneReference","\"com.eflatun.scenereference\": \"git+https://github.com/starikcetin/Eflatun.SceneReference.git#4.1.1\"" },
+        {"easy-text-effects", "\"com.qiaozhilei.easy-text-effects\": \"https://github.com/LeiQiaoZhi/Easy-Text-Effect.git\""},
+        {"inputsystemactionprompts", " \"com.simonoliver.inputsystemactionprompts\": \"https://github.com/DrewStriker/InputSystemActionPrompts.git\"" },
+        {"libre-fracture","\"com.hunter-production.new-libre-fracture\": \"https://github.com/HunterProduction/unity-libre-fracture-2.0.git\"" },
+        {"SerializableInterface", "\"net.tnrd.serializableinterface\": \"https://github.com/Thundernerd/Unity3D-SerializableInterface.git\"" },
+        {"serialized-dictionary", "\"ayellowpaper.serialized-dictionary\": \"https://github.com/ayellowpaper/SerializedDictionary.git\"\r\n" },
+        {"SaintsField","\"today.comes.saintsfield\": \"https://github.com/TylerTemp/SaintsField.git\"\r\n" },
+
+    };
+
+
+
     private static readonly Dictionary<string, string> links = new Dictionary<string, string>()
-        {
-            { "Kinematic Character Controller", "https://assetstore.unity.com/packages/tools/physics/kinematic-character-controller-99131" }
-        };
+     {
+        { "Kinematic Character Controller", "https://assetstore.unity.com/packages/tools/physics/kinematic-character-controller-99131" },
+        {"DoTween", "https://assetstore.unity.com/packages/tools/animation/dotween-hotween-v2-27676?srsltid=AfmBOopsF03XsIfq9easdkzo3Wd6JPv3Iqs_SV2WN9sA4rHRQgeHB023" },
+        {"Extenject","https://assetstore.unity.com/packages/tools/utilities/extenject-dependency-injection-ioc-157735?srsltid=AfmBOorIQPKpzpHQijGbLKpbKOCa2CWt3k1ia_G6OlTd0ggwvb-W1PlA" },
+        {"UnitRX", "https://assetstore.unity.com/packages/tools/integration/unirx-reactive-extensions-for-unity-17276?srsltid=AfmBOorWbajdWjUxIzrnEoSI1OioOongAO-3eYw9xxj_xJs7pE2MxLYy" }
+
+    };
+
 
     // private bool category1 = false;
     [MenuItem("Tools/Startup Package Installer")]
@@ -68,8 +91,10 @@ public class PackageInstallerWindow : EditorWindow
         //     category1 = !category1;
         // }
         // if (category1) 
-        DrawTools1();
-        DrawTools2();
+        DrawRegistryPackagesButtons();
+        DrawGitPackagesButtons();
+        DrawPackageLineButtons();
+
         GUILayout.Space(30);
         GUI.backgroundColor = Color.white;
 
@@ -99,7 +124,7 @@ public class PackageInstallerWindow : EditorWindow
 
     }
 
-    private static void DrawTools1()
+    private static void DrawRegistryPackagesButtons()
     {
         foreach (var pkg in registryPackages)
         {
@@ -119,14 +144,13 @@ public class PackageInstallerWindow : EditorWindow
                     {
                         AddRegistryPackage(split[0], split[1]);
                     }
-                    //UnityEditor.PackageManager.Client.Resolve();
 
                 }
             }
         }
     }
 
-    private static void DrawTools2()
+    private static void DrawGitPackagesButtons()
     {
         foreach (var pkg in gitPackages)
         {
@@ -146,13 +170,39 @@ public class PackageInstallerWindow : EditorWindow
                     {
                         AddGitPackage(pkg.Key, pkg.Value);
                     }
-                    //UnityEditor.PackageManager.Client.Resolve();
 
                 }
             }
         }
     }
 
+    private static void DrawPackageLineButtons()
+    {
+        foreach (var pkg in packagesLines)
+        {
+            bool pkgAdded = IsPackageInstalled(pkg.Key);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label(pkg.Key, GUILayout.Width(200));
+                if (pkgAdded) GUI.backgroundColor = Color.red; else GUI.backgroundColor = Color.green;
+
+                if (GUILayout.Button(pkgAdded ? "Remove" : "Install", GUILayout.Width(150)))
+                {
+                    if (pkgAdded)
+                    {
+                        RemovePackageLine(pkg.Value);
+                    }
+                    else
+                    {
+                        AddPackageLine(pkg.Value);
+
+                    }
+
+                }
+            }
+
+        }
+    }
     private static void CreateLinks()
     {
         GUILayout.Label("Asset Store ", EditorStyles.boldLabel);
@@ -204,6 +254,7 @@ public class PackageInstallerWindow : EditorWindow
             var root = JObject.Parse(manifestText);
             var deps = (JObject)root["dependencies"];
             deps.Remove(packageName);
+
             File.WriteAllText(manifestPath, root.ToString(Formatting.Indented));
             Debug.Log($"Package '{packageName}' removed from manifest.json.");
         }
@@ -257,11 +308,110 @@ public class PackageInstallerWindow : EditorWindow
         string manifestText = File.ReadAllText(manifestPath);
         string packageName = GeneratePackageNameFromUrl(gitUrl);
 
+
         if (manifestText.Contains($"\"{packageName}\""))
         {
             return true;
         }
         return false;
     }
+
+    public static void AddPackageLine(string newLine)
+    {
+        var text = File.ReadAllText(manifestPath);
+
+        // Localiza o bloco "dependencies": {
+        var depIndex = text.IndexOf("\"dependencies\"");
+        if (depIndex < 0) return;
+
+        // Localiza abertura do bloco
+        depIndex = text.IndexOf('{', depIndex);
+        if (depIndex < 0) return;
+
+        // Encontrar a linha após a chave '{'
+        var insertPos = depIndex + 1;
+
+        // Quebra o conteúdo
+        var before = text.Substring(0, insertPos);
+
+        // Se já existe algo, colocar vírgula no final do último item
+        var after = text.Substring(insertPos);
+        after = after.TrimStart();
+
+        string line = "\n    " + newLine + " ,\n";
+
+        // Recompõe
+        var result = before + line + text.Substring(insertPos);
+
+        File.WriteAllText(manifestPath, result);
+        Debug.Log($"package added: {newLine}");
+
+    }
+
+    public static void RemovePackageLine(string term)
+    {
+        var text = File.ReadAllText(manifestPath);
+
+        // Localiza o bloco "dependencies"
+        var depIndex = text.IndexOf("\"dependencies\"");
+        if (depIndex < 0) return;
+
+        // Abre o bloco {
+        depIndex = text.IndexOf('{', depIndex);
+        if (depIndex < 0) return;
+
+        // Fecha o bloco }
+        var endIndex = text.IndexOf('}', depIndex);
+        if (endIndex < 0) return;
+
+        // Extrai somente o conteúdo do bloco
+        var before = text.Substring(0, depIndex + 1);
+        var block = text.Substring(depIndex + 1, endIndex - depIndex - 1);
+        var after = text.Substring(endIndex);
+
+        // Divide por linhas
+        var lines = block.Split('\n').ToList();
+
+        // Remove linhas que contenham o termo
+        for (int i = lines.Count - 1; i >= 0; i--)
+        {
+            if (lines[i].Contains(term))
+                lines.RemoveAt(i);
+        }
+
+        // Ajusta vírgulas finais
+        for (int i = 0; i < lines.Count; i++)
+        {
+            var l = lines[i].Trim();
+
+            // Remove vírgula extra se for última linha
+            if (i == lines.Count - 1)
+                lines[i] = l.TrimEnd(',');
+        }
+
+        // Rebuild
+        var newBlock = string.Join("\n", lines);
+
+        // Recompõe o texto final
+        var final = before + newBlock + after;
+
+        File.WriteAllText(manifestPath, final);
+        Debug.Log($"package {term} removed");
+    }
+
+
+
+    public static bool IsPackageInstalled(string packageName)
+    {
+        if (!File.Exists(manifestPath)) return false;
+
+        string manifestText = File.ReadAllText(manifestPath).ToLower();
+        string packageNameformated = packageName.ToLower().Replace(" ", "");
+        if (manifestText.Contains($"{packageNameformated}")) return true;
+        return false;
+
+    }
+
+
 }
 #endif
